@@ -2,12 +2,21 @@
 
 from tkinter import *
 from account import *
+import tkinter.messagebox as msgbox
+
+from client_win import *
 
 def log_in():
     my_id = ent1.get()
     my_pw = ent2.get()
-    print(my_id, my_pw)
-
+    print("아이디 : {}, 패스워드 : {}".format(my_id, my_pw))
+    if my_id == EMAIL_ID and my_pw == PASSWORD:
+        print("로그인에 성공하였습니다.")
+        root.destroy()
+        client_window()
+    else:
+        print("로그인 실패, ID와 PW를 확인해주세요")
+        msgbox.showinfo("로그인 실패","아이디와 비밀번호를 다시 확인해주세요")      
 def show_option():
     if pw.get() == 0:
         ent2.config(show="")
@@ -15,7 +24,14 @@ def show_option():
     if pw.get() == 1:
         ent2.config(show="*")
         print(pw.get())
-
+        
+# def new_window():
+#     root = Tk()
+#     root.title("JK 심리센터")      # 제목 설정
+#     root.geometry("900x600")
+#     root.option_add("*Font", "궁서 20")
+#     root.mainloop() # 창이 닫히지 않도록하는 mainloop()
+    
 root = Tk()     # T대문자 k소문자
 root.title("JK 심리센터")      # 제목 설정
 root.geometry("350x400")
