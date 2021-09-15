@@ -60,9 +60,9 @@ ent1.pack(fill="x", side="right")
 lab1 = Label(lab1_frame)
 lab1.config(text = "ID")
 lab1.pack(side="right")
-####################
+#####################
 
-###### pw 프레임 #####
+###### pw 프레임 ######
 lab2_frame = Frame(root)
 lab2_frame.pack(fill="x", padx=5, pady=5)   # 가로로 채워짐
 # pw 입력창
