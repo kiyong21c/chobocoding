@@ -9,6 +9,10 @@ from openpyxl import load_workbook  # 파일 불러오기
 import pandas as pd
 import numpy as np
 import csv
+from datetime import date, timedelta
+
+today = date.today()    # 2021.09.26
+yesterday = date.today() - timedelta(1)
 
 # def client_window():
 root = Tk()
@@ -100,15 +104,15 @@ cell_label.pack(side="left")
 # cell입력 Entry
 cell = Entry(frame3, width=7, justify='center')
 cell.pack(fill="x", side="left")
-# date 라벨
+# vdate 라벨
 date_label = Label(frame3)
 date_label.config(text = "방문일자")
 date_label.pack(side="left")
-# date 입력 Entry(항상 오늘날짜가 입력되어 있도록)
-date = Entry(frame3, width=10)
-date.pack(fill="x", side="left")
+# vdate 입력 Entry(항상 오늘날짜가 입력되어 있도록)
+vdate = Entry(frame3, width=10)
+vdate.pack(fill="x", side="left")
 empty_date = str("{}".format(datetime.datetime.now().strftime('%Y-%m-%d')))
-date.insert(0, empty_date)
+vdate.insert(0, empty_date)
 #####################################################
 
 ##### 입력칸 초기화 ######
@@ -116,7 +120,7 @@ def del_Entry():
     name.delete(0, END)
     age.delete(0, END)
     cell.delete(0, END)
-    date.delete(0, END)
+    vdate.delete(0, END)
 #######################
 
 
@@ -128,7 +132,7 @@ def print_element(event):
     name.insert(0, values[0])
     age.insert(0, values[1])
     cell.insert(0, values[2])
-    date.insert(0, values[3])    
+    vdate.insert(0, values[3])    
     print(treeview.selection()[0])
     print(values)
 treeview.bind("<Double-1>", print_element)
@@ -146,7 +150,7 @@ add_btn.pack(side="left")
 ###### 변경 버튼 #######
 def upd_client():
     selected = treeview.focus()
-    values = treeview.item(selected, values=(name.get(), age.get(), cell.get(), date.get()))
+    values = treeview.item(selected, values=(name.get(), age.get(), cell.get(), vdate.get()))
     del_Entry()
 add_btn = Button(frame3)
 add_btn.config(padx=5, pady=5, width=10, text="변경", command=upd_client)
@@ -160,7 +164,7 @@ def add_client():
     # ws = wb.active  # 현재 활성화된 Sheet를 가져옴
     
     # # 1. 엑셀에 라인 추가
-    # ws.append([name.get(),age.get(),cell.get(),date.get()])   # 한줄씩 넣기 : 리스트 or 튜플 형태로 넣어줄수 있음
+    # ws.append([name.get(),age.get(),cell.get(),vdate.get()])   # 한줄씩 넣기 : 리스트 or 튜플 형태로 넣어줄수 있음
     # wb.save(location)  # 워크북의 이름 지정하여 저장 
     # wb.close()      # 열려있는 워크북 저장
     
@@ -182,29 +186,31 @@ def add_client():
         print("이름이 입력되지 않음")
         # 메세지 박스(askokcancel) 호출
         none_name()
-    # 3-1. 전화번호 형식 확인 : 010 미입력시 자동입력
-    elif cell.get()[0:3] != "010":
-        # 010이 없더라도 0000-0000 형식이라면 : 자동입력
+        
+####### 형식에 안맞는 입력값 자동 수정 #######
+def auto_entry_edit():
+    # 1-1. 전화번호 형식 확인 : 010 미입력시 자동입력
+    if cell.get()[0:3] != "010":
+        # 010이 없더라도 0000-0000 형식이라면 : "010-"" 자동입력
         if len(cell.get()) == 9:
             cell.insert(0, "010-")
-            treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
-            del_Entry
-            save()
-        # 010이 없는데 자리수가 안맞다면 : 메세지 박스(askokcancel) 호출
         else:
-            len_cell()            
-    # 3-2. 전화번호 형식 확인 : 하이픈(-) 미입력시 자동입력
-    elif cell.get()[3:4] != "-":
+            len_cell()
+    # 1-2. 전화번호 형식 확인 : 하이픈(-) 미입력시 자동입력
+    if cell.get()[3:4] != "-":
         cell.insert(3, "-")
         cell.insert(8, "-")
-        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
-        del_Entry
-        save()
+    # 2. 날짜 형식 '오늘', '어제' 입력시 자동입력
+    if vdate.get() == "오늘" or "어제":
+        if vdate.get() == "오늘":
+            vdate.delete(0, END)
+            vdate.insert(0, today)
+        else:
+            vdate.delete(0, END)
+            vdate.insert(0, yesterday)
     else:
-        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
-        del_Entry()
-        save()
-
+        pass
+###########################################
         
 ####### 추가시 에러 처리 함수#################
 # 1. 이름 중복
@@ -213,7 +219,8 @@ def same_name():
     print("응답 : ", response)
     if response == 1:
         print("계속")
-        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
+        auto_entry_edit()
+        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), vdate.get()))
         del_Entry()
         save()
     else:
@@ -224,7 +231,8 @@ def none_name():
     print("응답 : ", response)
     if response == 1:
         print("계속")
-        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
+        auto_entry_edit()
+        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), vdate.get()))
         del_Entry()
         save()
     else:
@@ -235,7 +243,7 @@ def len_cell():
     print("응답 : ", response)
     if response == 1:
         print("계속")
-        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
+        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), vdate.get()))
         del_Entry()
         save()
     else:
