@@ -1,5 +1,4 @@
 from tkinter import *
-
 from numpy.lib.index_tricks import fill_diagonal
 from account import *
 import tkinter.messagebox as msgbox
@@ -17,13 +16,15 @@ root.title("Client info")      # 제목 설정
 root.geometry("900x600")
 root.option_add("*Font", "궁서 20")
 
+filename = "/Users/kiyongseo/Documents/Python_Programming/python_chobocoding/tkinter/client_list.xlsx"
+df = pd.read_excel(filename)
 
 ########### Tree view ###########
 # 1. 고객정보 레이블 프레임
 frame1 = Frame(root)
 frame1.pack(side="top", fill="both", expand=True)
 # 2. 고객정보 레이블
-client_lbl = Label(frame1, text="고객정보")
+client_lbl = Label(frame1, text="고객정보 ({} 명)".format(len(df)))
 client_lbl.pack(side="left", ipadx=30)
 # 3. 고객정보 트리뷰 프레임
 frame_client = Frame(root)
@@ -36,8 +37,6 @@ treeview = ttk.Treeview(frame_client, selectmode="extended")
 treeview.pack(fill="both", expand=True)
 treeview.configure(yscrollcommand=client_scrollbar.set)
 client_scrollbar.configure(command=treeview.yview)
-filename = "/Users/kiyongseo/Documents/Python_Programming/python_chobocoding/tkinter/client_list.xlsx"
-df = pd.read_excel(filename)
 treeview["column"] = list(df.columns)
 treeview["show"] = "headings"
 # 반복문 돌면서 header 지정
@@ -120,7 +119,8 @@ def del_Entry():
     date.delete(0, END)
 #######################
 
-########## 아이템 더블클릭시 바로 Entry 입력 ###############
+
+########## 아이템 더블 클릭시 바로 Entry 입력 ###############
 def print_element(event):
     selected = treeview.focus()
     values = treeview.item(selected, 'values')
@@ -130,6 +130,7 @@ def print_element(event):
     cell.insert(0, values[2])
     date.insert(0, values[3])    
     print(treeview.selection()[0])
+    print(values)
 treeview.bind("<Double-1>", print_element)
 ######################################################
 
@@ -163,25 +164,83 @@ def add_client():
     # wb.save(location)  # 워크북의 이름 지정하여 저장 
     # wb.close()      # 열려있는 워크북 저장
     
-    # 2. treeview에 추가(insert) : 엑셀의 마지막 라인을 treeview에 추가
+    # # 2. treeview에 추가(insert) : 엑셀의 마지막 라인을 treeview에 추가
+    # df = pd.read_excel(filename)
+    # last_row = df.to_numpy().tolist()[-1]
+    # print(last_row)
+    # treeview.insert("", "end", values=last_row)
+    # print("이름 : {} - [등록이 완료되었습니다]".format(name.get()))
+    
+    # 1. 중복 확인
     df = pd.read_excel(filename)
-    last_row = df.to_numpy().tolist()[-1]
-    treeview.insert("", "end", values=last_row)
-    print("이름 : {} - [등록이 완료되었습니다]".format(name.get()))
-    
-    # 3. 입력칸 초기화
-    del_Entry()
-    
-    # 4. 저장
-    save()
-    
-    # 5. 에러 처리
-    df = pd.read_excel(filename)
-    # # 5-1. 동일 이름 존재
-    # print(df['이름'].value)
-    # if name.get() in df['이름'].value:
-    #     print("동일한 이름이 존재합니다.")
-    
+    if name.get() in list(df['이름']):  # 동일 이름 중복여부
+        print("{}과 같은 이름이 존재합니다.".format(name.get()))
+        # 메세지 박스(askokcancel) 호출
+        same_name()
+    # 2. 빈칸 확인
+    elif len(name.get()) ==0:   # 입력된 이름의 길이가 0인지
+        print("이름이 입력되지 않음")
+        # 메세지 박스(askokcancel) 호출
+        none_name()
+    # 3-1. 전화번호 형식 확인 : 010 미입력시 자동입력
+    elif cell.get()[0:3] != "010":
+        # 010이 없더라도 0000-0000 형식이라면 : 자동입력
+        if len(cell.get()) == 9:
+            cell.insert(0, "010-")
+            treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
+            del_Entry
+            save()
+        # 010이 없는데 자리수가 안맞다면 : 메세지 박스(askokcancel) 호출
+        else:
+            len_cell()            
+    # 3-2. 전화번호 형식 확인 : 하이픈(-) 미입력시 자동입력
+    elif cell.get()[3:4] != "-":
+        cell.insert(3, "-")
+        cell.insert(8, "-")
+        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
+        del_Entry
+        save()
+    else:
+        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
+        del_Entry()
+        save()
+
+        
+####### 추가시 에러 처리 함수#################
+# 1. 이름 중복
+def same_name():
+    response = msgbox.askokcancel(title=None, message="동일 내역 존재 \n 계속하시겠습니까?")    
+    print("응답 : ", response)
+    if response == 1:
+        print("계속")
+        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
+        del_Entry()
+        save()
+    else:
+        print("취소")
+# 2. 이름 빈칸
+def none_name():
+    response = msgbox.askokcancel(title=None, message="이름이 입력되지 않음 \n 계속하시겠습니까?")    
+    print("응답 : ", response)
+    if response == 1:
+        print("계속")
+        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
+        del_Entry()
+        save()
+    else:
+        print("취소")
+# 3. 전화번호 형식(digit 개수) 불일치
+def len_cell():
+    response = msgbox.askokcancel(title=None, message="전화번호 형식 오류 \n 계속하시겠습니까?")    
+    print("응답 : ", response)
+    if response == 1:
+        print("계속")
+        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), date.get()))
+        del_Entry()
+        save()
+    else:
+        print("취소")
+#################################
 add_btn = Button(frame3)
 add_btn.config(padx=5, pady=5, width=10, text="등록", command=add_client)
 add_btn.pack(side="left")
@@ -209,9 +268,9 @@ def del_client():
     # wb.close()      # 열려있는 워크북 저장
     
     # 2. treeview 선택하여 삭제
-    selected_item = treeview.selection() # get selected items
-    treeview.delete(selected_item)
-    
+    selected_items = treeview.selection() # get selected items
+    for selected_item in selected_items:
+        treeview.delete(selected_item)
     print("삭제가 완료 되었습니다.")
     
     # 3. 저장
@@ -247,9 +306,10 @@ def save():
     df.to_excel(writer, sheet_name='고객정보', index=False)
     writer.save()
     print("저장이 완료 되었습니다.")
+    client_lbl.config(text="고객정보 ({} 명)".format(len(df)))
 
 del_btn = Button(frame3)
 del_btn.config(padx=5, pady=5, width=10, text="저장", command=save())
-del_btn.pack()
+del_btn.pack(side="left")
 
 root.mainloop() # 창이 닫히지 않도록하는 mainloop()
