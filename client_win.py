@@ -51,7 +51,6 @@ for column in treeview["columns"]:
 df_rows = df.to_numpy().tolist()
 for row in df_rows:
     treeview.insert("", "end", values=row)
-
 ##################################
 
 # treeview.column("#0", width=100, anchor="center")
@@ -183,7 +182,7 @@ def add_client():
         same_name()
     # 2. 빈칸 확인
     elif len(name.get()) ==0:   # 입력된 이름의 길이가 0인지
-        print("이름이 입력되지 않음")
+        print("이름이 입력되지 않았습니다.")
         # 메세지 박스(askokcancel) 호출
         none_name()
         
@@ -279,7 +278,7 @@ def del_client():
     selected_items = treeview.selection() # get selected items
     for selected_item in selected_items:
         treeview.delete(selected_item)
-    print("삭제가 완료 되었습니다.")
+    print("{}개 항목 삭제 완료 되었습니다.".format(len(selected_items)))
     
     # 3. 저장
     save()
