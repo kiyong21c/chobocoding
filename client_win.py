@@ -9,6 +9,7 @@ from openpyxl import load_workbook  # 파일 불러오기
 import pandas as pd
 import numpy as np
 import csv
+from tkinter import filedialog
 from datetime import date, timedelta
 
 today = date.today()    # 2021.09.26
@@ -17,11 +18,12 @@ yesterday = date.today() - timedelta(1)
 # def client_window():
 root = Tk()
 root.title("Client info")      # 제목 설정
-root.geometry("900x600")
+root.geometry("1500x600")
 root.option_add("*Font", "궁서 20")
 
-filename = "/Users/kiyongseo/Documents/Python_Programming/python_chobocoding/tkinter/client_list.xlsx"
+filename = "client_list.xlsx"
 df = pd.read_excel(filename)
+
 
 ########### Tree view ###########
 # 1. 고객정보 레이블 프레임
@@ -48,7 +50,7 @@ for column in treeview["columns"]:
     treeview.heading(column, text=column)
     treeview.column(column, anchor="center")
 # treeview에 데이터 입력
-df_rows = df.to_numpy().tolist()
+df_rows = df.to_numpy().tolist()    # df.to_numpy() : [[row][row]] 리스트간에 구분자가 없다. → tolist()로 해결
 for row in df_rows:
     treeview.insert("", "end", values=row)
 ##################################
@@ -71,6 +73,26 @@ for row in df_rows:
 
 #################################
 
+########## client move up&down #######
+frame_move = Frame(root)
+frame_move.pack(side="top", fill="both", expand=True)
+def move_up():
+    leaves = treeview.selection()
+    for i in leaves:
+        treeview.move(i, treeview.parent(i), treeview.index(i)-1)
+def move_down():
+    leaves = treeview.selection()
+    for i in reversed(leaves):
+        treeview.move(i, treeview.parent(i), treeview.index(i)+1)
+
+
+add_btn = Button(frame_move)
+add_btn.config(padx=2, pady=2, width=3, text="↑", command=move_up)
+add_btn.pack()
+add_btn = Button(frame_move)
+add_btn.config(padx=2, pady=2, width=3, text="↓", command=move_down)
+add_btn.pack()
+######################################
 
 ########### client apply ########
 frame2 = Frame(root)
@@ -149,8 +171,10 @@ add_btn.pack(side="left")
 ###### 변경 버튼 #######
 def upd_client():
     selected = treeview.focus()
+    auto_entry_edit()
     values = treeview.item(selected, values=(name.get(), age.get(), cell.get(), vdate.get()))
     del_Entry()
+    save()
 add_btn = Button(frame3)
 add_btn.config(padx=5, pady=5, width=10, text="변경", command=upd_client)
 add_btn.pack(side="left")
@@ -185,6 +209,11 @@ def add_client():
         print("이름이 입력되지 않았습니다.")
         # 메세지 박스(askokcancel) 호출
         none_name()
+    else:
+        auto_entry_edit()
+        treeview.insert("", 0, values=(name.get(), age.get(), cell.get(), vdate.get()))
+        del_Entry()
+        save()
         
 ####### 형식에 안맞는 입력값 자동 수정 #######
 def auto_entry_edit():
@@ -219,7 +248,7 @@ def same_name():
     if response == 1:
         print("계속")
         auto_entry_edit()
-        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), vdate.get()))
+        treeview.insert("", 0, values=(name.get(), age.get(), cell.get(), vdate.get()))
         del_Entry()
         save()
     else:
@@ -231,7 +260,7 @@ def none_name():
     if response == 1:
         print("계속")
         auto_entry_edit()
-        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), vdate.get()))
+        treeview.insert("", 0, values=(name.get(), age.get(), cell.get(), vdate.get()))
         del_Entry()
         save()
     else:
@@ -242,7 +271,7 @@ def len_cell():
     print("응답 : ", response)
     if response == 1:
         print("계속")
-        treeview.insert("", "end", values=(name.get(), age.get(), cell.get(), vdate.get()))
+        treeview.insert("", 0, values=(name.get(), age.get(), cell.get(), vdate.get()))
         del_Entry()
         save()
     else:
@@ -288,7 +317,7 @@ del_btn.config(padx=5, pady=5, width=10, text="삭제", command=del_client)
 del_btn.pack(side="left")
 
 
-######## 저장 버튼 ########
+######## 저장 버튼(변경/삭제시에도 자동작동됨) ########
 def save():
     cols = ['이름','나이','전화번호','최근방문일']
     path = 'read.csv'   # 임시로 사용할 csv 파일
@@ -318,5 +347,28 @@ def save():
 del_btn = Button(frame3)
 del_btn.config(padx=5, pady=5, width=10, text="저장", command=save())
 del_btn.pack(side="left")
+
+
+#### 엑셀로 내보내기(저장) 기능 ####
+frame4 = Frame(root)
+frame4.pack(side="top", fill="both", expand=True)
+def export():
+    filename = filedialog.asksaveasfilename(initialdir="/", title="파일 내보내기",
+                                          filetypes=(("xlsx files", "*.xlsx"),
+                                          ("all files", "*.*")))
+    # 2. csv 형태로 저장된 파일을 pandas이용하여 데이터 프레임 형태로 불러옴
+    path = 'read.csv'   # 임시로 사용할 csv 파일
+    df = pd.read_csv(path)
+    # 3. 데이터 프레임을 엑셀로 저장
+    writer = pd.ExcelWriter(filename)
+    df.to_excel(writer, sheet_name='고객정보', index=False)
+    writer.save()
+    print("파일 내보내기 완료 되었습니다.")
+del_btn = Button(frame4)
+del_btn.config(padx=5, pady=5, width=10, text="내보내기", command=export)
+del_btn.pack(side="left")
+
+
+
 
 root.mainloop() # 창이 닫히지 않도록하는 mainloop()
