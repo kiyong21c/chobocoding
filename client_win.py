@@ -300,8 +300,8 @@ def save():
         # print(treeview.get_children())  # .get_children() : 행의 아이디 반환
         for row_id in treeview.get_children():
             row = treeview.item(row_id,'values')
-            lst.append(row)
-        lst = list(map(list,lst))
+            lst.append(row)         # row를 append하고 난후 for문을 나가도 lst=[]안에서 row가 개별로 인식되네?
+        lst = list(map(list,lst))   # map(함수, 이터러블한객체), 반환하기 위해서는 list()로 씌워야함, [[row],[row],[row],...]
         lst.insert(0,cols)
         for row in lst:
             csvwriter.writerow(row)
